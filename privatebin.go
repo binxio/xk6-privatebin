@@ -1,11 +1,26 @@
+//
+// Copyright 2021 - binx.io B.V.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 package privatebin
 
 import (
-	"context"
 	"encoding/base64"
 	"encoding/json"
+	"github.com/btcsuite/btcutil/base58"
 
-	"go.k6.io/k6/js/common"
 	"go.k6.io/k6/js/modules"
 )
 
@@ -15,34 +30,28 @@ func init() {
 
 type PrivateBin struct{}
 
-type Client struct {
+
+type Result struct {
+	Body string
+	Key  string
 }
 
-func (r *PrivateBin) XClient(ctxPtr *context.Context) interface{} {
-	rt := common.GetRuntime(*ctxPtr)
-	return common.Bind(rt, &Client{}, ctxPtr)
-}
-
-func (r *PrivateBin) Encrypt(payload string) string {
+func (r *PrivateBin) Encrypt(payload string) (*Result, error) {
 	pasteContent, err := json.Marshal(&PasteContent{Paste: payload})
 	if err != nil {
-		panic(err)
-		return ""
+		return nil, err
 	}
 
 	masterKey, err := GenerateRandomBytes(32)
 	if err != nil {
-		panic(err)
-		return ""
+		return nil, err
 	}
 
 	pasteData, err := encrypt(masterKey, pasteContent)
 	if err != nil {
-		panic(err)
-		return ""
+		return nil, err
 	}
 
-	// Create a new Paste Request.
 	pasteRequest := &PasteRequest{
 		V:     2,
 		AData: pasteData.adata(),
@@ -54,9 +63,8 @@ func (r *PrivateBin) Encrypt(payload string) string {
 
 	body, err := json.Marshal(pasteRequest)
 	if err != nil {
-		panic(err)
-		return ""
+		return nil, err
 	}
 
-	return string(body)
+	return &Result{Body: string(body), Key: base58.Encode(masterKey)}, nil
 }
