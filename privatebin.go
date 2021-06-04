@@ -30,13 +30,12 @@ func init() {
 
 type PrivateBin struct{}
 
-
 type Result struct {
 	Body string
 	Key  string
 }
 
-func (r *PrivateBin) Encrypt(payload string) (*Result, error) {
+func (r *PrivateBin) Encrypt(payload string, expire string) (*Result, error) {
 	pasteContent, err := json.Marshal(&PasteContent{Paste: payload})
 	if err != nil {
 		return nil, err
@@ -52,11 +51,15 @@ func (r *PrivateBin) Encrypt(payload string) (*Result, error) {
 		return nil, err
 	}
 
+	if expire == "" {
+		expire = "1day"
+	}
+
 	pasteRequest := &PasteRequest{
 		V:     2,
 		AData: pasteData.adata(),
 		Meta: PasteRequestMeta{
-			Expire: "1week",
+			Expire: expire,
 		},
 		CT: base64.RawStdEncoding.EncodeToString(pasteData.Data),
 	}

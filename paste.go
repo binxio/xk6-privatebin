@@ -1,4 +1,3 @@
-
 package privatebin
 
 import (
