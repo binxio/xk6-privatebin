@@ -20,6 +20,8 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"github.com/btcsuite/btcutil/base58"
+	"math/rand"
+	"time"
 
 	"go.k6.io/k6/js/modules"
 )
@@ -33,6 +35,21 @@ type PrivateBin struct{}
 type Result struct {
 	Body string
 	Key  string
+}
+
+func init() {
+	rand.Seed(time.Now().UnixNano())
+}
+
+var letterRunes = []rune("\n\n\n\n\nabcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ")
+
+func (r *PrivateBin) EncryptRandomPayload(size int, expire string) (*Result, error) {
+	b := make([]rune, size)
+	for i := range b {
+		b[i] = letterRunes[rand.Intn(len(letterRunes))]
+	}
+
+	return r.Encrypt(string(b), expire)
 }
 
 func (r *PrivateBin) Encrypt(payload string, expire string) (*Result, error) {
